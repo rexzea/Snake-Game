@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game Ular</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background: linear-gradient(135deg, #2e3a59, #5b7d9a);
+            overflow: hidden;
+            font-family: Arial, sans-serif;
+        }
+        canvas {
+            border: 5px solid #fff;
+            background: #000;
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+        }
+        .hidden {
+            display: none;
+        }
+        .menu, .game-over, .pause-menu {
+            color: #fff;
+            text-align: center;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+        .menu h1, .game-over h1, .pause-menu h1 {
+            font-size: 3em;
+        }
+        .menu button, .game-over button, .pause-menu button {
+            padding: 10px 20px;
+            font-size: 1.2em;
+            margin: 10px;
+            border: none;
+            border-radius: 5px;
+            background: #444;
+            color: #fff;
+            cursor: pointer;
+        }
+        .menu button:hover, .game-over button:hover, .pause-menu button:hover {
+            background: #666;
+        }
+        .power-up {
+            width: 30px;
+            height: 30px;
+            position: absolute;
+            border-radius: 50%;
+        }
+    </style>
+</head>
+<body>
+    <div class="menu" id="menu">
+        <h1>Game Ular</h1>
+        <button onclick="startGame()">Mulai Game</button>
+    </div>
+    <canvas id="gameCanvas" width="1000" height="1000" class="hidden"></canvas>
+    <div class="game-over hidden" id="gameOver">
+        <h1>Game Over</h1>
+        <p>Skor: <span id="finalScore"></span></p>
+        <p>Level: <span id="finalLevel"></span></p>
+        <button onclick="startGame()">Main Lagi</button>
+    </div>
+    <div class="pause-menu hidden" id="pauseMenu">
+        <h1>Pause</h1>
+        <button onclick="resumeGame()">Lanjutkan</button>
+        <button onclick="startGame()">Main Lagi</button>
+    </div>
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const box = 30;
+        let score;
+        let snake;
+        let food;
+        let obstacles;
+        let powerUps;
+        let d;
+        let game;
+        let level;
+        let speed;
+        let isPaused = false;
+
+        function startGame() {
+            document.getElementById('menu').classList.add('hidden');
+            document.getElementById('gameCanvas').classList.remove('hidden');
+            document.getElementById('gameOver').classList.add('hidden');
+            document.getElementById('pauseMenu').classList.add('hidden');
+            score = 0;
+            level = 1;
+            speed = 100;
+            snake = [{x: 15 * box, y: 15 * box}];
+            food = generateFood();
+            obstacles = generateObstacles();
+            powerUps = generatePowerUps();
+            d = '';
+            if (game) clearInterval(game);
+            game = setInterval(draw, speed);
+        }
+
+        function pauseGame() {
+            isPaused = true;
+            clearInterval(game);
+            document.getElementById('pauseMenu').classList.remove('hidden');
+        }
+
+        function resumeGame() {
+            isPaused = false;
+            document.getElementById('pauseMenu').classList.add('hidden');
+            game = setInterval(draw, speed);
+        }
+
+        document.addEventListener('keydown', (event) => {
+            if (event.keyCode === 27) { // Escape key
+                if (isPaused) {
+                    resumeGame();
+                } else {
+                    pauseGame();
+                }
+            } else if (event.keyCode === 37 && d !== 'RIGHT') d = 'LEFT';
+            else if (event.keyCode === 38 && d !== 'DOWN') d = 'UP';
+            else if (event.keyCode === 39 && d !== 'LEFT') d = 'RIGHT';
+            else if (event.keyCode === 40 && d !== 'UP') d = 'DOWN';
+        });
+
+        function collision(head, array) {
+            for (let i = 0; i < array.length; i++) {
+                if (head.x === array[i].x && head.y === array[i].y) return true;
+            }
+            return false;
+        }
+
+        function generateFood() {
+            const types = ['red', 'blue', 'green'];
+            const type = types[Math.floor(Math.random() * types.length)];
+            return {
+                x: Math.floor(Math.random() * (canvas.width / box)) * box,
+                y: Math.floor(Math.random() * (canvas.height / box)) * box,
+                type: type
+            };
+        }
+
+        function generateObstacles() {
+            let obstacles = [];
+            for (let i = 0; i < 20; i++) {
+                obstacles.push({
+                    x: Math.floor(Math.random() * (canvas.width / box)) * box,
+                    y: Math.floor(Math.random() * (canvas.height / box)) * box
+                });
+            }
+            return obstacles;
+        }
+
+        function generatePowerUps() {
+            let powerUps = [];
+            for (let i = 0; i < 5; i++) {
+                powerUps.push({
+                    x: Math.floor(Math.random() * (canvas.width / box)) * box,
+                    y: Math.floor(Math.random() * (canvas.height / box)) * box,
+                    type: Math.random() < 0.5 ? 'grow' : 'shrink'
+                });
+            }
+            return powerUps;
+        }
+
+        function draw() {
+            if (isPaused) return;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Draw Snake
+            for (let i = 0; i < snake.length; i++) {
+                ctx.fillStyle = i === 0 ? '#00FF00' : '#00AA00';
+                ctx.strokeStyle = '#006600';
+                ctx.lineWidth = 2;
+                ctx.fillRect(snake[i].x, snake[i].y, box, box);
+                ctx.strokeRect(snake[i].x, snake[i].y, box, box);
+            }
+
+            // Draw Food
+            ctx.fillStyle = food.type === 'red' ? '#FF0000' : food.type === 'blue' ? '#0000FF' : '#00FF00';
+            ctx.fillRect(food.x, food.y, box, box);
+
+            // Draw Obstacles
+            obstacles.forEach(obs => {
+                ctx.fillStyle = '#555';
+                ctx.fillRect(obs.x, obs.y, box, box);
+            });
+
+            // Draw Power-ups
+            powerUps.forEach(pu => {
+                ctx.fillStyle = pu.type === 'grow' ? '#FFA500' : '#800080';
+                ctx.fillRect(pu.x, pu.y, box, box);
+            });
+
+            // Move Snake
+            let snakeX = snake[0].x;
+            let snakeY = snake[0].y;
+
+            if (d === 'LEFT') snakeX -= box;
+            if (d === 'UP') snakeY -= box;
+            if (d === 'RIGHT') snakeX += box;
+            if (d === 'DOWN') snakeY += box;
+
+            // Check for Food Collision
+            if (snakeX === food.x && snakeY === food.y) {
+                score++;
+                food = generateFood();
+                if (score % 5 === 0) {
+                    level++;
+                    speed = Math.max(50, speed - 10);
+                    clearInterval(game);
+                    game = setInterval(draw, speed);
+                }
+            } else {
+                snake.pop();
+            }
+
+            // Check for Power-up Collision
+            for (let i = 0; i < powerUps.length; i++) {
+                if (snakeX === powerUps[i].x && snakeY === powerUps[i].y) {
+                    if (powerUps[i].type === 'grow') {
+                        snake.push({ ...snake[snake.length - 1] });
+                    } else {
+                        snake.pop();
+                    }
+                    powerUps.splice(i, 1);
+                    powerUps = generatePowerUps();
+                }
+            }
+
+            const newHead = {x: snakeX, y: snakeY};
+
+            // Check for Collisions
+            if (snakeX < 0 || snakeX >= canvas.width || snakeY < 0 || snakeY >= canvas.height || collision(newHead, snake) || collision(newHead, obstacles)) {
+                clearInterval(game);
+                document.getElementById('finalScore').innerText = score;
+                document.getElementById('finalLevel').innerText = level;
+                document.getElementById('gameCanvas').classList.add('hidden');
+                document.getElementById('gameOver').classList.remove('hidden');
+                return;
+            }
+
+            snake.unshift(newHead);
+        }
+    </script>
+</body>
+</html>
