@@ -28,7 +28,7 @@ A classic Snake Game built with **HTML**, **CSS**, and **JavaScript**, designed 
 ---
 
 ## Screenshot
-![Snake Game Screenshot](assets/snake-game-screenshot.png)
+![Snake Game Screenshot](ular.png)
 
 ---
 
