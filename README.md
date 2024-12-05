@@ -38,3 +38,7 @@ You can play this game directly in your browser!
 1. Clone the repository:
    ```bash
    https://github.com/rexzea/game-ular-ssh.git
+
+Preview
+   ```bash
+https://rexzea.github.io/game-ular-ssh/
